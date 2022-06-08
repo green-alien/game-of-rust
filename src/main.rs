@@ -17,7 +17,6 @@ impl Cell {
             Cell{x: x0 - 1, y: y0    }, /*      origin      */  Cell{x: x0 + 1, y: y0    },
             Cell{x: x0 - 1, y: y0 + 1}, Cell{x: x0, y: y0 + 1}, Cell{x: x0 + 1, y: y0 + 1},
         ]
-
     }
 } 
 
@@ -27,7 +26,9 @@ impl Life {
 
     // return each cell neighboring a live cell
     fn gen_relevent_cells(&self) -> Vec<Cell> {
+
         let rel = self.0.iter().map(|x| { x.get_neighbors() });
+
         rel.fold(vec!(), |a, b| { [a, b.to_vec()].concat() })
     }
 
@@ -37,7 +38,7 @@ impl Life {
         // borrow current state
         let alive = &self.0;
 
-        // get all cells who niegbor a live cell
+        // get all cells who nieghbor a live cell
         let mut rel_neighbors = self.gen_relevent_cells();
 
         // retain them if not already in state
@@ -45,16 +46,14 @@ impl Life {
             rel_neighbors.retain(|v| { *v != *a })
         }
         
-        // this is pretty bad all things considered
-        // the fact that i have to check each member of alive every time a call this
-        // meaning as the number of cells grows, preformance suffers
+        // count the number of neigbors in the set alive
         let count_alive_neigbors = |c: Cell| {
 
             let neighbors = c.get_neighbors();
 
             neighbors.iter().fold(
-                0, 
-                |c, n| { 
+                0,
+                |c, n| {
                     if alive.contains(n) {c + 1}
                     else {c}
                 }
@@ -78,7 +77,6 @@ impl Life {
         
         Life(next_generation)
     }
-    
 }
 
 fn main() {
