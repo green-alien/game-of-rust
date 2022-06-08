@@ -1,0 +1,99 @@
+use itertools::Itertools;
+use std::io;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct Cell{x: i32, y: i32}
+
+//const ORIGIN: Cell = Cell{x: 0, y: 0};
+
+impl Cell {
+
+    // return a cells neighbors
+    pub fn get_neighbors(&self) -> [Cell; 8]{
+        let [x0, y0] = [self.x, self.y];
+
+        [
+            Cell{x: x0 - 1, y: y0 - 1}, Cell{x: x0, y: y0 - 1}, Cell{x: x0 + 1, y: y0 - 1},
+            Cell{x: x0 - 1, y: y0    }, /*      origin      */  Cell{x: x0 + 1, y: y0    },
+            Cell{x: x0 - 1, y: y0 + 1}, Cell{x: x0, y: y0 + 1}, Cell{x: x0 + 1, y: y0 + 1},
+        ]
+
+    }
+} 
+
+struct Life(Vec<Cell>);
+
+impl Life {
+
+    // return each cell neighboring a live cell
+    fn gen_relevent_cells(&self) -> Vec<Cell> {
+        let rel = self.0.iter().map(|x| { x.get_neighbors() });
+        rel.fold(vec!(), |a, b| { [a, b.to_vec()].concat() })
+    }
+
+    // return the next state of life
+    fn eval(&self) -> Life {
+        
+        // borrow current state
+        let alive = &self.0;
+
+        // get all cells who niegbor a live cell
+        let mut rel_neighbors = self.gen_relevent_cells();
+
+        // retain them if not already in state
+        for a in alive.iter() {
+            rel_neighbors.retain(|v| { *v != *a })
+        }
+        
+        // this is pretty bad all things considered
+        // the fact that i have to check each member of alive every time a call this
+        // meaning as the number of cells grows, preformance suffers
+        let count_alive_neigbors = |c: Cell| {
+
+            let neighbors = c.get_neighbors();
+
+            neighbors.iter().fold(
+                0, 
+                |c, n| { 
+                    if alive.contains(n) {c + 1}
+                    else {c}
+                }
+            )
+        };
+
+        // cells to be alive in next state iteration
+        let mut next_generation: Vec<Cell> = vec!();
+
+        // alive cell rules
+        for canidate in alive.iter() {
+            let count = count_alive_neigbors(*canidate);
+            if count == 2 || count == 3 { next_generation.push(*canidate); }
+        }
+
+        // dead cell rule
+        for canidate in rel_neighbors.iter().unique() {
+            let count = count_alive_neigbors(*canidate);
+            if count == 3 { next_generation.push(*canidate) }
+        }
+        
+        Life(next_generation)
+    }
+    
+}
+
+fn main() {
+    
+    let mut blinker = Life(
+        vec!(
+            Cell{x: -1, y: 0}, Cell{x: 0, y: 0}, Cell{x: 1, y: 0}
+        )
+    );
+
+    loop {
+        blinker = blinker.eval();
+        println!("{:?}", blinker.0);
+
+        let mut n = String::new();
+        io::stdin().read_line(&mut n).expect("failed to readline");
+    }
+}
