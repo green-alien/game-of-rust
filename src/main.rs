@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use std::io;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Cell{x: i32, y: i32}
 
 //const ORIGIN: Cell = Cell{x: 0, y: 0};
@@ -9,15 +9,15 @@ struct Cell{x: i32, y: i32}
 impl Cell {
 
     // return a cells neighbors
-    pub fn get_neighbors(&self) -> [Cell; 8]{
-        let [x0, y0] = [self.x, self.y];
-        let xmod = |i| {x0.wrapping_add(i)};
-        let ymod = |i| {y0.wrapping_add(i)};
+    pub fn get_neighbors(&self) -> [Cell; 8] {
+
+        let xmod = |i| {self.x.wrapping_add(i)};
+        let ymod = |i| {self.y.wrapping_add(i)};
 
         [
-            Cell{x: xmod(-1), y: ymod(-1)}, Cell{x: x0, y: ymod(-1)}, Cell{x: xmod(1), y: ymod(1)},
-            Cell{x: xmod(-1), y: y0      }, /*       origin       */  Cell{x: xmod(1), y: y0     },
-            Cell{x: xmod(-1), y: ymod( 1)}, Cell{x: x0, y: ymod( 1)}, Cell{x: xmod(1), y: ymod(1)},
+            Cell{x: xmod(-1), y: ymod(-1)}, Cell{x: self.x, y: ymod(-1)}, Cell{x: xmod(1), y: ymod(-1)},
+            Cell{x: xmod(-1), y: self.y  }, /*         origin         */  Cell{x: xmod(1), y: self.y },
+            Cell{x: xmod(-1), y: ymod( 1)}, Cell{x: self.x, y: ymod( 1)}, Cell{x: xmod(1), y: ymod( 1)},
         ]
     }
 } 
@@ -29,9 +29,17 @@ impl Life {
     // return each cell neighboring a live cell
     fn gen_relevent_cells(&self) -> Vec<Cell> {
 
-        let rel = self.0.iter().map(|x| { x.get_neighbors() }).unique();
+        // map get neighbors to each cell that is alive
+        let all = self.0.iter().map(|x| { x.get_neighbors() });
 
-        rel.fold(vec!(), |a, b| { [a, b.to_vec()].concat() })
+        // fold lists of neighbors into vec 
+        let mut rel = all.fold(vec!(), |a, b| { [a, b.to_vec()].concat()});
+
+        // remove duplicate cells
+        rel.sort();
+        rel.dedup();
+
+        rel
     }
 
     // return the next state of life
@@ -43,7 +51,7 @@ impl Life {
         // get all cells who nieghbor a live cell
         let mut rel_neighbors = self.gen_relevent_cells();
 
-        // retain them if not already in state
+        // retain them if not already in alive
         for a in alive.iter() {
             rel_neighbors.retain(|v| { *v != *a })
         }
@@ -67,15 +75,22 @@ impl Life {
 
         // alive cell rules
         for canidate in alive.iter() {
+            print!(" candidate alive : {:?}", canidate);
             let count = count_alive_neigbors(*canidate);
+            println!(" {count}");
             if count == 2 || count == 3 { next_generation.push(*canidate); }
         }
 
+        println!();
+    
         // dead cell rule
         for canidate in rel_neighbors.iter() {
+            print!(" candidate dead : {:?}", canidate);
             let count = count_alive_neigbors(*canidate);
+            println!(" {count}");
             if count == 3 { next_generation.push(*canidate) }
         }
+        println!();
         
         Life(next_generation)
     }
@@ -88,6 +103,8 @@ fn main() {
             Cell{x: -1, y: 0}, Cell{x: 0, y: 0}, Cell{x: 1, y: 0}
         )
     );
+
+    println!("{:?}", blinker.0);
 
     loop {
         blinker = blinker.eval();
