@@ -11,11 +11,13 @@ impl Cell {
     // return a cells neighbors
     pub fn get_neighbors(&self) -> [Cell; 8]{
         let [x0, y0] = [self.x, self.y];
+        let xmod = |i| {x0.wrapping_add(i)};
+        let ymod = |i| {y0.wrapping_add(i)};
 
         [
-            Cell{x: x0 - 1, y: y0 - 1}, Cell{x: x0, y: y0 - 1}, Cell{x: x0 + 1, y: y0 - 1},
-            Cell{x: x0 - 1, y: y0    }, /*      origin      */  Cell{x: x0 + 1, y: y0    },
-            Cell{x: x0 - 1, y: y0 + 1}, Cell{x: x0, y: y0 + 1}, Cell{x: x0 + 1, y: y0 + 1},
+            Cell{x: xmod(-1), y: ymod(-1)}, Cell{x: x0, y: ymod(-1)}, Cell{x: xmod(1), y: ymod(1)},
+            Cell{x: xmod(-1), y: y0      }, /*       origin       */  Cell{x: xmod(1), y: y0     },
+            Cell{x: xmod(-1), y: ymod( 1)}, Cell{x: x0, y: ymod( 1)}, Cell{x: xmod(1), y: ymod(1)},
         ]
     }
 } 
@@ -27,7 +29,7 @@ impl Life {
     // return each cell neighboring a live cell
     fn gen_relevent_cells(&self) -> Vec<Cell> {
 
-        let rel = self.0.iter().map(|x| { x.get_neighbors() });
+        let rel = self.0.iter().map(|x| { x.get_neighbors() }).unique();
 
         rel.fold(vec!(), |a, b| { [a, b.to_vec()].concat() })
     }
@@ -70,7 +72,7 @@ impl Life {
         }
 
         // dead cell rule
-        for canidate in rel_neighbors.iter().unique() {
+        for canidate in rel_neighbors.iter() {
             let count = count_alive_neigbors(*canidate);
             if count == 3 { next_generation.push(*canidate) }
         }
