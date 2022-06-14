@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::io;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -78,15 +77,12 @@ impl Life {
             let count = count_alive_neigbors(*canidate);
             if count == 2 || count == 3 { next_generation.push(*canidate); }
         }
-
-        println!();
     
         // dead cell rule
         for canidate in rel_neighbors.iter() {
             let count = count_alive_neigbors(*canidate);
             if count == 3 { next_generation.push(*canidate) }
         }
-        println!();
         
         Life(next_generation)
     }
