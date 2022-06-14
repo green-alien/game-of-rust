@@ -75,9 +75,7 @@ impl Life {
 
         // alive cell rules
         for canidate in alive.iter() {
-            print!(" candidate alive : {:?}", canidate);
             let count = count_alive_neigbors(*canidate);
-            println!(" {count}");
             if count == 2 || count == 3 { next_generation.push(*canidate); }
         }
 
@@ -85,9 +83,7 @@ impl Life {
     
         // dead cell rule
         for canidate in rel_neighbors.iter() {
-            print!(" candidate dead : {:?}", canidate);
             let count = count_alive_neigbors(*canidate);
-            println!(" {count}");
             if count == 3 { next_generation.push(*canidate) }
         }
         println!();
