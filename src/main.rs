@@ -96,40 +96,44 @@ impl Life {
     }
 }
 
-impl fmt::Display for Life {
+impl fmt::Display for Life { // or bike shedding, code edition
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         
         // find the shortist terminal dimention
-        let mut boarder_len = 0;
+        let [mut rows, mut cols] = [0; 2];
         termsize::get().map(|size| { // set boarder len here
-            boarder_len = if size.rows > size.cols / 2 {size.cols / 2}
-                          else {size.rows}; 
+            rows = size.rows;
+            cols = size.cols / 2;
         });
 
-        let boarder_len = boarder_len as usize;
+        let rows = rows as usize;
+        let cols = cols as usize;
+
+        println!("rows {rows}  columns {cols}");
 
         // center of the board
-        let origin = (boarder_len / 2) as i32;
+        let origin_x = (cols/2) as i32;
+        let origin_y = (rows/2) as i32;
         
-        let mut board = vec![vec!["  "; boarder_len]; boarder_len];
+        println!("x {origin_x}  y {origin_y}");
+        let mut board = vec![vec!["  "; cols]; rows];
         
         // push live cells here
-
         for live_cell in self.0.iter() {
 
             let [xcor, ycor] = live_cell.xy();
-            let [xcor, ycor] = [xcor + origin, ycor + origin];
+            let [xcor, ycor] = [xcor + origin_x, ycor + origin_y];
 
-            let is_on_board = |cor| {0 <= cor && cor < boarder_len as i32};
+            let is_on_board = |cor, edge| {0 <= cor && cor < edge as i32};
 
-            if !(is_on_board(xcor) && is_on_board(ycor)) {continue};
+            if !(is_on_board(xcor, cols) && is_on_board(ycor, rows)) {continue};
             
             board[ycor as usize][xcor as usize] = "\x1b[30;107m  \x1b[0m";
         }
 
+        // finally, collect board into a string, and write
         let mut str_board = "".to_owned();
-
         for row in board {
 
             let mut line = "".to_owned();
@@ -146,40 +150,38 @@ impl fmt::Display for Life {
 
 fn main() {
     
+    // "why dont i have a social life?" asks the terrible programer
     let mut block = Life(
         vec!(
-            Cell{x:0, y:0},   Cell{x:-1, y:0},  Cell{x:-1, y:-1},
-            Cell{x:-1, y:1},  Cell{x:-2, y:-2}, Cell{x:-2, y: 2},
-            Cell{x:-3, y:0},  Cell{x:-4, y:-3}, Cell{x:-4, y:3},
-            Cell{x:-5, y:-3}, Cell{x:-5, y:3},  Cell{x:-6, y:-2},
-            Cell{x:-6, y:2},  Cell{x:-7, y:-1}, Cell{x:-7, y:0},
-            Cell{x:-7, y:1},  Cell{x:3, y:-1},  Cell{x:3, y:-2}, 
-            Cell{x:3, y:-3},  Cell{x:4, y:-1},  Cell{x:4, y:-2}, 
-            Cell{x:4, y:-3},  Cell{x:5, y:0},   Cell{x:5, y: -4},
-            Cell{x:7, y:0},   Cell{x:7, y:1},   Cell{x:7, y:-4}, 
-            Cell{x:7, y:-5},  Cell{x:-16, y:0}, Cell{x:-16, y:-1},
+            Cell{x:0, y:0},   Cell{x:-1, y:0},   Cell{x:-1, y:-1},
+            Cell{x:-1, y:1},  Cell{x:-2, y:-2},  Cell{x:-2, y: 2},
+            Cell{x:-3, y:0},  Cell{x:-4, y:-3},  Cell{x:-4, y:3},
+            Cell{x:-5, y:-3}, Cell{x:-5, y:3},   Cell{x:-6, y:-2},
+            Cell{x:-6, y:2},  Cell{x:-7, y:-1},  Cell{x:-7, y:0},
+            Cell{x:-7, y:1},  Cell{x:3, y:-1},   Cell{x:3, y:-2}, 
+            Cell{x:3, y:-3},  Cell{x:4, y:-1},   Cell{x:4, y:-2}, 
+            Cell{x:4, y:-3},  Cell{x:5, y:0},    Cell{x:5, y: -4},
+            Cell{x:7, y:0},   Cell{x:7, y:1},    Cell{x:7, y:-4}, 
+            Cell{x:7, y:-5},  Cell{x:-16, y:0},  Cell{x:-16, y:-1},
             Cell{x:-17, y:0}, Cell{x:-17, y:-1}, Cell{x:17, y:-2},
-            Cell{x:17, y:-3}, Cell{x:18, y:-2}, Cell{x:18, y:-3},
+            Cell{x:17, y:-3}, Cell{x:18, y:-2},  Cell{x:18, y:-3},
     
         )
     );
 
-    //let mut block = Life(
-    //    vec!(
-    //        Cell{x:-1, y:0}, Cell{x:0, y:1}, Cell{x:1, y:1},
-    //        Cell{x:1, y:0}, Cell{x:1, y:-1},
-    //    )
-    //);
+    //let mut block = Life(vec!(Cell{x:0, y:0}));
 
     println!("{block}");
+
+    let mut _n = String::new();
+    io::stdin().read_line(&mut _n).expect("failed to readline");
+
 
     loop {
 
         let one_sec = time::Duration::from_millis(250);
         thread::sleep(one_sec);
-        //let mut _n = String::new();
-        //io::stdin().read_line(&mut _n).expect("failed to readline");
-
+        
         // remove previous print?
 
         block = block.eval();
