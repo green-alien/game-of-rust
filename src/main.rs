@@ -1,5 +1,6 @@
 use std::io;
 use std::fmt;
+use std::{thread, time};
 extern crate termsize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -99,60 +100,90 @@ impl fmt::Display for Life {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         
+        // find the shortist terminal dimention
         let mut boarder_len = 0;
-        termsize::get().map(|size| {
+        termsize::get().map(|size| { // set boarder len here
             boarder_len = if size.rows > size.cols / 2 {size.cols / 2}
                           else {size.rows}; 
         });
 
         let boarder_len = boarder_len as usize;
+
+        // center of the board
         let origin = (boarder_len / 2) as i32;
         
-        let mut board = vec![vec!["░░"; boarder_len]; boarder_len];
+        let mut board = vec![vec!["  "; boarder_len]; boarder_len];
         
         // push live cells here
 
         for live_cell in self.0.iter() {
+
             let [xcor, ycor] = live_cell.xy();
             let [xcor, ycor] = [xcor + origin, ycor + origin];
+
             let is_on_board = |cor| {0 <= cor && cor < boarder_len as i32};
+
             if !(is_on_board(xcor) && is_on_board(ycor)) {continue};
             
             board[ycor as usize][xcor as usize] = "\x1b[30;107m  \x1b[0m";
         }
 
         let mut str_board = "".to_owned();
+
         for row in board {
 
             let mut line = "".to_owned();
             for square in row {
                 line.push_str(square);
             }
+
             str_board.push_str(&format!("{line}\n"));
         }
+
         write!(f, "{str_board}")
     }
 }
 
 fn main() {
     
-    let mut blinker = Life(
+    let mut block = Life(
         vec!(
-            Cell{x: -1, y: 0}, Cell{x: 0, y: 0}, Cell{x: 1, y: 0}
+            Cell{x:0, y:0},   Cell{x:-1, y:0},  Cell{x:-1, y:-1},
+            Cell{x:-1, y:1},  Cell{x:-2, y:-2}, Cell{x:-2, y: 2},
+            Cell{x:-3, y:0},  Cell{x:-4, y:-3}, Cell{x:-4, y:3},
+            Cell{x:-5, y:-3}, Cell{x:-5, y:3},  Cell{x:-6, y:-2},
+            Cell{x:-6, y:2},  Cell{x:-7, y:-1}, Cell{x:-7, y:0},
+            Cell{x:-7, y:1},  Cell{x:3, y:-1},  Cell{x:3, y:-2}, 
+            Cell{x:3, y:-3},  Cell{x:4, y:-1},  Cell{x:4, y:-2}, 
+            Cell{x:4, y:-3},  Cell{x:5, y:0},   Cell{x:5, y: -4},
+            Cell{x:7, y:0},   Cell{x:7, y:1},   Cell{x:7, y:-4}, 
+            Cell{x:7, y:-5},  Cell{x:-16, y:0}, Cell{x:-16, y:-1},
+            Cell{x:-17, y:0}, Cell{x:-17, y:-1}, Cell{x:17, y:-2},
+            Cell{x:17, y:-3}, Cell{x:18, y:-2}, Cell{x:18, y:-3},
+    
         )
     );
 
+    //let mut block = Life(
+    //    vec!(
+    //        Cell{x:-1, y:0}, Cell{x:0, y:1}, Cell{x:1, y:1},
+    //        Cell{x:1, y:0}, Cell{x:1, y:-1},
+    //    )
+    //);
 
-    println!("{:?}", blinker.0);
-    println!("{blinker}");
+    println!("{block}");
 
     loop {
-        blinker = blinker.eval();
-    
-        println!("{:?}", blinker.0);
-        println!("{blinker}");
 
-        let mut n = String::new();
-        io::stdin().read_line(&mut n).expect("failed to readline");
+        let one_sec = time::Duration::from_millis(250);
+        thread::sleep(one_sec);
+        //let mut _n = String::new();
+        //io::stdin().read_line(&mut _n).expect("failed to readline");
+
+        // remove previous print?
+
+        block = block.eval();
+        println!("{block}"); 
     }
+
 }
