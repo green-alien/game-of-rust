@@ -100,9 +100,9 @@ impl fmt::Display for Life { // or bike shedding, code edition
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         
-        // find the shortist terminal dimention
+        // find the terminal dimentions
         let [mut rows, mut cols] = [0; 2];
-        termsize::get().map(|size| { // set boarder len here
+        termsize::get().map(|size| { 
             rows = size.rows;
             cols = size.cols / 2;
         });
@@ -110,13 +110,10 @@ impl fmt::Display for Life { // or bike shedding, code edition
         let rows = rows as usize;
         let cols = cols as usize;
 
-        println!("rows {rows}  columns {cols}");
-
         // center of the board
         let origin_x = (cols/2) as i32;
         let origin_y = (rows/2) as i32;
         
-        println!("x {origin_x}  y {origin_y}");
         let mut board = vec![vec!["  "; cols]; rows];
         
         // push live cells here
@@ -151,7 +148,7 @@ impl fmt::Display for Life { // or bike shedding, code edition
 fn main() {
     
     // "why dont i have a social life?" asks the terrible programer
-    let mut block = Life(
+    let mut gosper = Life(
         vec!(
             Cell{x:0, y:0},   Cell{x:-1, y:0},   Cell{x:-1, y:-1},
             Cell{x:-1, y:1},  Cell{x:-2, y:-2},  Cell{x:-2, y: 2},
@@ -165,13 +162,12 @@ fn main() {
             Cell{x:7, y:-5},  Cell{x:-16, y:0},  Cell{x:-16, y:-1},
             Cell{x:-17, y:0}, Cell{x:-17, y:-1}, Cell{x:17, y:-2},
             Cell{x:17, y:-3}, Cell{x:18, y:-2},  Cell{x:18, y:-3},
-    
         )
     );
 
-    //let mut block = Life(vec!(Cell{x:0, y:0}));
+    //let mut gosper = Life(vec!(Cell{x:0, y:0}));
 
-    println!("{block}");
+    println!("{gosper}");
 
     let mut _n = String::new();
     io::stdin().read_line(&mut _n).expect("failed to readline");
@@ -184,8 +180,8 @@ fn main() {
         
         // remove previous print?
 
-        block = block.eval();
-        println!("{block}"); 
+        gosper = gosper.eval();
+        println!("{gosper}"); 
     }
 
 }
