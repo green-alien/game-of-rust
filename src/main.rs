@@ -1,4 +1,6 @@
 use std::io;
+use std::fmt;
+extern crate termsize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Cell{x: i32, y: i32}
@@ -15,11 +17,16 @@ impl Cell {
 
         [
             Cell{x: xmod(-1), y: ymod(-1)}, Cell{x: self.x, y: ymod(-1)}, Cell{x: xmod(1), y: ymod(-1)},
-            Cell{x: xmod(-1), y: self.y  }, /*         origin         */  Cell{x: xmod(1), y: self.y },
+            Cell{x: xmod(-1), y: self.y  }, /*         origin         */  Cell{x: xmod(1), y: self.y  },
             Cell{x: xmod(-1), y: ymod( 1)}, Cell{x: self.x, y: ymod( 1)}, Cell{x: xmod(1), y: ymod( 1)},
         ]
     }
-} 
+
+    pub fn xy(&self) -> [i32; 2] {
+        [self.x , self.y]
+    }
+}
+
 
 struct Life(Vec<Cell>);
 
@@ -88,6 +95,45 @@ impl Life {
     }
 }
 
+impl fmt::Display for Life {
+
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        
+        let mut boarder_len = 0;
+        termsize::get().map(|size| {
+            boarder_len = if size.rows > size.cols / 2 {size.cols / 2}
+                          else {size.rows}; 
+        });
+
+        let boarder_len = boarder_len as usize;
+        let origin = (boarder_len / 2) as i32;
+        
+        let mut board = vec![vec!["░░"; boarder_len]; boarder_len];
+        
+        // push live cells here
+
+        for live_cell in self.0.iter() {
+            let [xcor, ycor] = live_cell.xy();
+            let [xcor, ycor] = [xcor + origin, ycor + origin];
+            let is_on_board = |cor| {0 <= cor && cor < boarder_len as i32};
+            if !(is_on_board(xcor) && is_on_board(ycor)) {continue};
+            
+            board[ycor as usize][xcor as usize] = "\x1b[30;107m  \x1b[0m";
+        }
+
+        let mut str_board = "".to_owned();
+        for row in board {
+
+            let mut line = "".to_owned();
+            for square in row {
+                line.push_str(square);
+            }
+            str_board.push_str(&format!("{line}\n"));
+        }
+        write!(f, "{str_board}")
+    }
+}
+
 fn main() {
     
     let mut blinker = Life(
@@ -96,11 +142,15 @@ fn main() {
         )
     );
 
+
     println!("{:?}", blinker.0);
+    println!("{blinker}");
 
     loop {
         blinker = blinker.eval();
+    
         println!("{:?}", blinker.0);
+        println!("{blinker}");
 
         let mut n = String::new();
         io::stdin().read_line(&mut n).expect("failed to readline");
