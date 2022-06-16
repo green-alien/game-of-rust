@@ -6,7 +6,7 @@ use rayon::prelude::*;
 extern crate termsize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-struct Cell{x: i32, y: i32}
+struct Cell{x: i8, y: i8}
 
 //const ORIGIN: Cell = Cell{x: 0, y: 0};
 
@@ -25,7 +25,7 @@ impl Cell {
         ]
     }
 
-    pub fn xy(&self) -> [i32; 2] {
+    pub fn xy(&self) -> [i8; 2] {
         [self.x , self.y]
     }
 }
@@ -51,6 +51,17 @@ impl Life {
         rel
     }
 
+    // remove highly irrelivent cells
+    //fn clean(&mut self) {
+    //    self.0 = self.0
+    //        .clone()
+    //        .into_iter()
+    //        .filter(|c| {
+    //            c.x.abs() < 256 || c.y.abs() < 256
+    //        })
+    //        .collect();
+    //}
+
     // return the next state of life
     fn eval(&self) -> Life {
         
@@ -70,13 +81,13 @@ impl Life {
 
             let neighbors = c.get_neighbors();
 
-            neighbors.par_iter().fold(
-                || 0,
+            neighbors.iter().fold(
+                0, //|| 0,
                 |c, n| {
                     if self.0.contains(n) {c + 1}
                     else {c}
                 },   
-            ).sum()
+            )//.sum()
         };
 
         // cells to be alive in next state iteration
@@ -118,8 +129,8 @@ impl fmt::Display for Life { // or bike shedding, code edition
         let cols = cols as usize;
 
         // center of the board
-        let origin_x = (cols/2) as i32;
-        let origin_y = (rows/2) as i32;
+        let origin_x = (cols/2) as i8;
+        let origin_y = (rows/2) as i8;
         
         let mut board = vec![vec!["  "; cols]; rows];
         
@@ -127,9 +138,9 @@ impl fmt::Display for Life { // or bike shedding, code edition
         for live_cell in self.0.iter() {
 
             let [xcor, ycor] = live_cell.xy();
-            let [xcor, ycor] = [xcor + origin_x, ycor + origin_y];
+            let [xcor, ycor] = [xcor.wrapping_add(origin_x), ycor.wrapping_add(origin_y)];
 
-            let is_on_board = |cor, edge| {0 <= cor && cor < edge as i32};
+            let is_on_board = |cor, edge| {0 <= cor && cor < edge as i8};
 
             if !(is_on_board(xcor, cols) && is_on_board(ycor, rows)) {continue};
             
@@ -187,6 +198,7 @@ fn main() {
         // remove previous print?
 
         gosper = gosper.eval();
+        //gosper.clean();
         println!("{gosper}"); 
     }
 
