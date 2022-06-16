@@ -1,6 +1,8 @@
 use std::io;
 use std::fmt;
 use std::{thread, time};
+use std::sync::{Arc, Mutex};
+use rayon::prelude::*;
 extern crate termsize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -53,46 +55,51 @@ impl Life {
     fn eval(&self) -> Life {
         
         // borrow current state
-        let alive = &self.0;
+        //let alive = &self.0;
 
         // get all cells who nieghbor a live cell
         let mut rel_neighbors = self.gen_relevent_cells();
 
         // retain them if not already in alive
-        for a in alive.iter() {
+        for a in self.0.iter() {
             rel_neighbors.retain(|v| { *v != *a })
         }
         
         // count the number of neigbors in the set alive
-        let count_alive_neigbors = |c: Cell| {
+        let count_alive_neigbors = |c: Cell| -> u32 {
 
             let neighbors = c.get_neighbors();
 
-            neighbors.iter().fold(
-                0,
+            neighbors.par_iter().fold(
+                || 0,
                 |c, n| {
-                    if alive.contains(n) {c + 1}
+                    if self.0.contains(n) {c + 1}
                     else {c}
-                }
-            )
+                },   
+            ).sum()
         };
 
         // cells to be alive in next state iteration
-        let mut next_generation: Vec<Cell> = vec!();
+        let next_generation = Arc::new(Mutex::new(vec!()));
 
-        // alive cell rules
-        for canidate in alive.iter() {
+        // alive cell rules  
+        self.0.par_iter().for_each( |canidate| {
             let count = count_alive_neigbors(*canidate);
-            if count == 2 || count == 3 { next_generation.push(*canidate); }
-        }
-    
-        // dead cell rule
-        for canidate in rel_neighbors.iter() {
-            let count = count_alive_neigbors(*canidate);
-            if count == 3 { next_generation.push(*canidate) }
-        }
+            if count == 2 || count == 3 { next_generation.lock().unwrap().push(*canidate); }
+        });
         
-        Life(next_generation)
+        
+        // dead cell rule
+        rel_neighbors.par_iter().for_each( |canidate| {
+            let count = count_alive_neigbors(*canidate);
+            if count == 3 { next_generation.lock().unwrap().push(*canidate) }
+        });
+        //    let count = count_alive_neigbors(*canidate);
+        //    if count == 3 { next_generation.push(*canidate) }
+        //}
+        
+        let next_life = Life(next_generation.lock().unwrap().to_vec());
+        next_life
     }
 }
 
@@ -172,10 +179,9 @@ fn main() {
     let mut _n = String::new();
     io::stdin().read_line(&mut _n).expect("failed to readline");
 
-
     loop {
 
-        let one_sec = time::Duration::from_millis(250);
+        let one_sec = time::Duration::from_millis(100);
         thread::sleep(one_sec);
         
         // remove previous print?
